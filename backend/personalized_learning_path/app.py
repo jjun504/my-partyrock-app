@@ -43,14 +43,21 @@ def generate_stream(instrument, skill_level, genre):
                     if chunk_obj['delta']['type'] == 'text_delta':
                         yield chunk_obj['delta']['text']
 
+@app.after_request
+def after_request(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+    return response
+
+@app.route('/', methods=['GET'])
+def health_check():
+    return {'status': 'healthy', 'service': 'personalized_learning_path'}, 200
+
 @app.route('/', methods=['POST', 'OPTIONS'])
 def handle_request():
     if request.method == 'OPTIONS':
-        response = Response()
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-        return response, 200
+        return '', 200
 
     try:
         data = request.get_json()
@@ -59,19 +66,16 @@ def handle_request():
         genre = data.get('genre', '')
 
         def generate():
-            for chunk in generate_stream(instrument, skill_level, genre):
-                yield chunk
+            try:
+                for chunk in generate_stream(instrument, skill_level, genre):
+                    yield chunk
+            except Exception as e:
+                yield f"Error: {str(e)}"
 
-        response = Response(stream_with_context(generate()), content_type='text/plain; charset=utf-8')
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-        return response
+        return Response(stream_with_context(generate()), content_type='text/plain; charset=utf-8')
 
     except Exception as e:
-        error_response = Response(f"Error: {str(e)}", content_type='text/plain; charset=utf-8', status=500)
-        error_response.headers['Access-Control-Allow-Origin'] = '*'
-        return error_response
+        return Response(f"Error: {str(e)}", content_type='text/plain; charset=utf-8', status=500)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
