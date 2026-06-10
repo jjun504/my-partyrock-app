@@ -10,7 +10,7 @@ bedrock_runtime = boto3.client(
     region_name='ap-southeast-1'
 )
 
-MODEL_ID = 'anthropic.claude-sonnet-4-6'
+MODEL_ID = 'global.anthropic.claude-sonnet-4-6'
 
 def generate_stream(instrument, skill_level, genre):
     prompt = f"""Based on the user's instrument {instrument}, skill level {skill_level}, and genre preferences {genre}, design a tailored musical learning curriculum that includes specific techniques, chord progressions, and practice strategies."""
