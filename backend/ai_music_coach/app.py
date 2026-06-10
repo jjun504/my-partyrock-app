@@ -10,7 +10,7 @@ bedrock_runtime = boto3.client(
     region_name='ap-southeast-1'
 )
 
-MODEL_ID = 'anthropic.claude-3-5-sonnet-20241022-v2:0'
+MODEL_ID = 'anthropic.claude-3-haiku-20240307-v1:0'
 
 def generate_stream(skill_level, instrument, genre, learning_path, message, conversation_history):
     system_prompt = f"""I'm a {skill_level} {instrument} player interested in {genre}. Help me understand my personalized learning path: {learning_path}"""
