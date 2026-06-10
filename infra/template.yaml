@@ -4,8 +4,8 @@ Description: AI Music Learning Companion
 
 Globals:
   Function:
-    Timeout: 60
-    MemorySize: 256
+    Timeout: 120
+    MemorySize: 512
     Runtime: python3.12
 
 Resources:
@@ -43,6 +43,7 @@ Resources:
       CodeUri: ../backend/personalized_learning_path/
       Handler: run.sh
       Role: !GetAtt AppBedrockRole.Arn
+      Timeout: 120
       Layers:
         - !Sub 'arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:27'
       Environment:
@@ -50,9 +51,20 @@ Resources:
           AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
           AWS_LWA_INVOKE_MODE: response_stream
           PORT: '8080'
+          RUST_LOG: 'info'
       FunctionUrlConfig:
         AuthType: NONE
         InvokeMode: RESPONSE_STREAM
+        Cors:
+          AllowOrigins:
+            - '*'
+          AllowMethods:
+            - GET
+            - POST
+            - OPTIONS
+          AllowHeaders:
+            - '*'
+          MaxAge: 300
 
   # Lambda Function for AI Music Coach
   AIMusicCoachFunction:
@@ -61,6 +73,7 @@ Resources:
       CodeUri: ../backend/ai_music_coach/
       Handler: run.sh
       Role: !GetAtt AppBedrockRole.Arn
+      Timeout: 120
       Layers:
         - !Sub 'arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:27'
       Environment:
@@ -68,9 +81,20 @@ Resources:
           AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
           AWS_LWA_INVOKE_MODE: response_stream
           PORT: '8080'
+          RUST_LOG: 'info'
       FunctionUrlConfig:
         AuthType: NONE
         InvokeMode: RESPONSE_STREAM
+        Cors:
+          AllowOrigins:
+            - '*'
+          AllowMethods:
+            - GET
+            - POST
+            - OPTIONS
+          AllowHeaders:
+            - '*'
+          MaxAge: 300
 
   # S3 Bucket for Static Website Hosting
   FrontendBucket:
