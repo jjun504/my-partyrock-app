@@ -55,16 +55,6 @@ Resources:
       FunctionUrlConfig:
         AuthType: NONE
         InvokeMode: RESPONSE_STREAM
-        Cors:
-          AllowOrigins:
-            - '*'
-          AllowMethods:
-            - GET
-            - POST
-            - OPTIONS
-          AllowHeaders:
-            - '*'
-          MaxAge: 300
 
   # Lambda Function for AI Music Coach
   AIMusicCoachFunction:
@@ -85,16 +75,6 @@ Resources:
       FunctionUrlConfig:
         AuthType: NONE
         InvokeMode: RESPONSE_STREAM
-        Cors:
-          AllowOrigins:
-            - '*'
-          AllowMethods:
-            - GET
-            - POST
-            - OPTIONS
-          AllowHeaders:
-            - '*'
-          MaxAge: 300
 
   # S3 Bucket for Static Website Hosting
   FrontendBucket:
