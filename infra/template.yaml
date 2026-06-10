@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AI Music Learning Companion
+
+Globals:
+  Function:
+    Timeout: 60
+    MemorySize: 256
+    Runtime: python3.12
+
+Resources:
+  # IAM Role for Lambda functions to access Bedrock
+  AppBedrockRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: BedrockInvokePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource:
+                  - !Sub 'arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/global.anthropic.claude-sonnet-4-6-20260217-v1:0'
+                  - !Sub 'arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-6-20260217-v1:0'
+                  - 'arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-6-20260217-v1:0'
+
+  # Lambda Function for Personalized Learning Path
+  PersonalizedLearningPathFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/personalized_learning_path/
+      Handler: run.sh
+      Role: !GetAtt AppBedrockRole.Arn
+      Layers:
+        - !Sub 'arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:27'
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          AWS_LWA_INVOKE_MODE: response_stream
+          PORT: '8080'
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: RESPONSE_STREAM
+
+  # Lambda Function for AI Music Coach
+  AIMusicCoachFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/ai_music_coach/
+      Handler: run.sh
+      Role: !GetAtt AppBedrockRole.Arn
+      Layers:
+        - !Sub 'arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:27'
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          AWS_LWA_INVOKE_MODE: response_stream
+          PORT: '8080'
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: RESPONSE_STREAM
+
+  # S3 Bucket for Static Website Hosting
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  # Bucket Policy for Public Read Access
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: !Sub '${FrontendBucket.Arn}/*'
+
+Outputs:
+  PersonalizedLearningPathUrl:
+    Description: URL for Personalized Learning Path Function
+    Value: !GetAtt PersonalizedLearningPathFunctionUrl.FunctionUrl
+
+  AIMusicCoachUrl:
+    Description: URL for AI Music Coach Function
+    Value: !GetAtt AIMusicCoachFunctionUrl.FunctionUrl
+
+  WebsiteUrl:
+    Description: S3 Website URL
+    Value: !GetAtt FrontendBucket.WebsiteURL
+
+  BucketName:
+    Description: S3 Bucket Name
+    Value: !Ref FrontendBucket

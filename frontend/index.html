@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Music Learning Companion</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .widget {
+            margin-bottom: 30px;
+        }
+
+        .widget-label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        select, input[type="text"], textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .run-button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 20px 0;
+        }
+
+        .run-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .run-button:active {
+            transform: translateY(0);
+        }
+
+        .run-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .output-panel {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .text-output {
+            height: 340px;
+            overflow-y: auto;
+        }
+
+        .text-output::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .text-output::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .text-output::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .text-output::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .chat-output {
+            min-height: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #667eea;
+            font-weight: 500;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            color: #e74c3c;
+            padding: 20px;
+            background: #fee;
+            border-radius: 8px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .output-content {
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .md-line {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .md-line h1, .md-line h2, .md-line h3 {
+            margin: 16px 0 8px 0;
+            color: #2c3e50;
+        }
+
+        .md-line h1 { font-size: 1.8em; }
+        .md-line h2 { font-size: 1.5em; }
+        .md-line h3 { font-size: 1.3em; }
+
+        .md-line strong {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .md-line em {
+            font-style: italic;
+        }
+
+        .md-line code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .md-line ul, .md-line ol {
+            margin-left: 20px;
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+
+        .md-line hr {
+            border: none;
+            border-top: 2px solid #e0e0e0;
+            margin: 16px 0;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: #667eea;
+            margin-left: 2px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .chat-message {
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .user-message {
+            background: #667eea;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .assistant-message {
+            background: #f0f0f0;
+            color: #333;
+            align-self: flex-start;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .chat-input {
+            flex: 1;
+        }
+
+        .chat-send-button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chat-send-button:hover {
+            background: #5568d3;
+        }
+
+        .chat-send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .chat-message {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 AI Music Learning Companion</h1>
+        <p class="subtitle">Your personalized path to musical mastery</p>
+
+        <!-- Widget 1: Musical Instrument -->
+        <div class="widget">
+            <label class="widget-label" for="instrument">Musical Instrument</label>
+            <select id="instrument">
+                <option value="">Select your primary instrument</option>
+                <option value="Guitar">Guitar</option>
+                <option value="Piano">Piano</option>
+                <option value="Violin">Violin</option>
+                <option value="Saxophone">Saxophone</option>
+                <option value="Drums">Drums</option>
+                <option value="Bass">Bass</option>
+                <option value="Voice">Voice</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <!-- Widget 2: Skill Level -->
+        <div class="widget">
+            <label class="widget-label" for="skillLevel">Skill Level</label>
+            <select id="skillLevel">
+                <option value="">Select your current skill level</option>
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+                <option value="Professional">Professional</option>
+            </select>
+        </div>
+
+        <!-- Widget 3: Musical Genre Preference -->
+        <div class="widget">
+            <label class="widget-label" for="genre">Musical Genre Preference</label>
+            <input type="text" id="genre" placeholder="What genres are you most interested in? (e.g., Jazz, Rock, Classical)">
+        </div>
+
+        <!-- Run All Button -->
+        <button class="run-button" id="runButton">Generate My Learning Path</button>
+
+        <!-- Widget 4: Personalized Learning Path -->
+        <div class="widget">
+            <label class="widget-label">Personalized Learning Path</label>
+            <div class="output-panel text-output" id="learningPathOutput">
+                <div style="color: #999; text-align: center; padding: 40px;">
+                    Fill in your details above and click "Generate My Learning Path" to get started
+                </div>
+            </div>
+        </div>
+
+        <!-- Widget 5: AI Music Coach -->
+        <div class="widget">
+            <label class="widget-label">AI Music Coach</label>
+            <div class="output-panel chat-output" id="chatOutput">
+                <div class="chat-container" id="chatContainer">
+                    <div style="color: #999; text-align: center; padding: 40px;">
+                        Your AI coach will appear here once your learning path is generated
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Ask your AI coach a question..." disabled>
+                <button class="chat-send-button" id="chatSendButton" disabled>Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STREAM_URLS = {
+            personalized_learning_path: '__URL_PERSONALIZED_LEARNING_PATH__',
+            ai_music_coach: '__URL_AI_MUSIC_COACH__',
+        };
+
+        let learningPathGenerated = false;
+        let learningPathContent = '';
+        let conversationHistory = [];
+
+        const runButton = document.getElementById('runButton');
+        const learningPathOutput = document.getElementById('learningPathOutput');
+        const chatContainer = document.getElementById('chatContainer');
+        const chatInput = document.getElementById('chatInput');
+        const chatSendButton = document.getElementById('chatSendButton');
+
+        function parseMarkdown(text) {
+            // Headers
+            text = text.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            text = text.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            text = text.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+            
+            // Bold
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Italic
+            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            // Code
+            text = text.replace(/`(.*?)`/g, '<code>$1</code>');
+            
+            // Horizontal rule
+            text = text.replace(/^---$/gim, '<hr>');
+            
+            // Bullet lists
+            text = text.replace(/^\- (.*$)/gim, '<ul><li>$1</li></ul>');
+            text = text.replace(/^\* (.*$)/gim, '<ul><li>$1</li></ul>');
+            
+            // Numbered lists
+            text = text.replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>');
+            
+            // Merge consecutive list items
+            text = text.replace(/<\/ul>\s*<ul>/g, '');
+            text = text.replace(/<\/ol>\s*<ol>/g, '');
+            
+            return text;
+        }
+
+        async function streamResponse(url, payload, outputElement, isChat = false) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let fullText = '';
+                let currentLine = document.createElement('span');
+                currentLine.className = 'md-line';
+                
+                if (!isChat) {
+                    outputElement.innerHTML = '';
+                    outputElement.appendChild(currentLine);
+                }
+
+                const cursor = document.createElement('span');
+                cursor.className = 'cursor';
+                currentLine.appendChild(cursor);
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+
+                    for (const line of lines) {
+                        if (line.trim()) {
+                            fullText += line + '\n';
+                            cursor.remove();
+                            currentLine.innerHTML = parseMarkdown(line);
+                            
+                            const newLine = document.createElement('span');
+                            newLine.className = 'md-line';
+                            if (!isChat) {
+                                outputElement.appendChild(newLine);
+                            }
+                            currentLine = newLine;
+                            currentLine.appendChild(cursor);
+                        }
+                    }
+                }
+
+                if (buffer.trim()) {
+                    fullText += buffer;
+                    cursor.remove();
+                    currentLine.innerHTML = parseMarkdown(buffer);
+                }
+
+                cursor.remove();
+                return fullText.trim();
+            } catch (error) {
+                console.error('Streaming error:', error);
+                outputElement.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                throw error;
+            }
+        }
+
+        async function generateLearningPath() {
+            const instrument = document.getElementById('instrument').value;
+            const skillLevel = document.getElementById('skillLevel').value;
+            const genre = document.getElementById('genre').value;
+
+            if (!instrument || !skillLevel || !genre) {
+                alert('Please fill in all fields before generating your learning path');
+                return;
+            }
+
+            runButton.disabled = true;
+            runButton.textContent = 'Generating...';
+            learningPathOutput.innerHTML = '<div class="loading"><div class="spinner"></div>Crafting your personalized learning path...</div>';
+
+            const payload = {
+                instrument: instrument,
+                skill_level: skillLevel,
+                genre: genre
+            };
+
+            try {
+                learningPathContent = await streamResponse(
+                    STREAM_URLS.personalized_learning_path,
+                    payload,
+                    learningPathOutput,
+                    false
+                );
+
+                learningPathGenerated = true;
+                chatInput.disabled = false;
+                chatSendButton.disabled = false;
+                chatContainer.innerHTML = '<div style="color: #999; text-align: center; padding: 20px;">Your AI coach is ready! Ask any questions about your learning path.</div>';
+                
+                runButton.textContent = 'Regenerate Learning Path';
+            } catch (error) {
+                runButton.textContent = 'Generate My Learning Path';
+            } finally {
+                runButton.disabled = false;
+            }
+        }
+
+        async function sendChatMessage() {
+            if (!learningPathGenerated) {
+                alert('Please generate your learning path first');
+                return;
+            }
+
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            chatInput.disabled = true;
+            chatSendButton.disabled = true;
+
+            // Add user message
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'chat-message user-message';
+            userMessageDiv.textContent = message;
+            
+            if (chatContainer.querySelector('[style*="color: #999"]')) {
+                chatContainer.innerHTML = '';
+            }
+            chatContainer.appendChild(userMessageDiv);
+            
+            conversationHistory.push({
+                role: 'user',
+                content: message
+            });
+
+            // Add assistant message container
+            const assistantMessageDiv = document.createElement('div');
+            assistantMessageDiv.className = 'chat-message assistant-message';
+            chatContainer.appendChild(assistantMessageDiv);
+
+            chatInput.value = '';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            const instrument = document.getElementById('instrument').value;
+            const skillLevel = document.getElementById('skillLevel').value;
+            const genre = document.getElementById('genre').value;
+
+            const payload = {
+                skill_level: skillLevel,
+                instrument: instrument,
+                genre: genre,
+                learning_path: learningPathContent,
+                message: message,
+                conversation_history: conversationHistory
+            };
+
+            try {
+                const response = await streamResponse(
+                    STREAM_URLS.ai_music_coach,
+                    payload,
+                    assistantMessageDiv,
+                    true
+                );
+
+                conversationHistory.push({
+                    role: 'assistant',
+                    content: response
+                });
+
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            } catch (error) {
+                assistantMessageDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                chatInput.disabled = false;
+                chatSendButton.disabled = false;
+                chatInput.focus();
+            }
+        }
+
+        runButton.addEventListener('click', generateLearningPath);
+        chatSendButton.addEventListener('click', sendChatMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !chatSendButton.disabled) {
+                sendChatMessage();
+            }
+        });
+    </script>
+</body>
+</html>
